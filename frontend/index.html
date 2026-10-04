@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>auto-preview sample</title>
+  <style>
+    body { font: 16px/1.5 system-ui, sans-serif; max-width: 36rem; margin: 3rem auto; padding: 0 1rem; }
+    h1 { margin-bottom: .25rem; }
+    .sub { color: #666; margin-top: 0; }
+    table { width: 100%; border-collapse: collapse; margin-top: 1.5rem; }
+    td { padding: .5rem .25rem; border-bottom: 1px solid #ddd; }
+    td:first-child { color: #666; width: 40%; }
+    .ok { color: #1a7f37; } .bad { color: #cf222e; }
+    code { background: #f2f2f2; padding: .1rem .3rem; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <h1>auto-preview sample</h1>
+  <p class="sub" id="message">Loading…</p>
+  <table>
+    <tr><td>API URL (baked in at build)</td><td><code id="api-url"></code></td></tr>
+    <tr><td>PR</td><td id="pr">…</td></tr>
+    <tr><td>Commit</td><td id="sha">…</td></tr>
+    <tr><td>Database</td><td id="database">…</td></tr>
+    <tr><td>Extras (<code>preview:extras</code>)</td><td id="extras">…</td></tr>
+    <tr><td>PREVIEW_ENV secret</td><td id="secret">…</td></tr>
+    <tr><td>API started</td><td id="startedAt">…</td></tr>
+  </table>
+  <script src="config.js"></script>
+  <script>
+    const apiUrl = window.APP_CONFIG.apiUrl;
+    const $ = (id) => document.getElementById(id);
+    $('api-url').textContent = apiUrl || '(not set)';
+
+    function show(id, value, good) {
+      const el = $(id);
+      el.textContent = value ?? 'n/a';
+      if (good !== undefined) el.className = good ? 'ok' : 'bad';
+    }
+
+    // Cross-origin on purpose: frontend and api live on different tunnel hostnames.
+    fetch(apiUrl + '/api/info')
+      .then((r) => r.json())
+      .then((d) => {
+        $('message').textContent = d.message;
+        show('pr', d.pr);
+        show('sha', d.sha);
+        show('database', d.database, d.database === 'reachable');
+        show('extras', d.extras);
+        show('secret', d.secret);
+        show('startedAt', d.startedAt);
+      })
+      .catch((e) => { $('message').textContent = 'Could not reach the API: ' + e.message; });
+  </script>
+</body>
+</html>

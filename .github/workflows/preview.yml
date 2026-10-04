@@ -1,0 +1,22 @@
+name: Preview
+
+on:
+  pull_request:
+    types: [labeled, unlabeled, synchronize, reopened, closed]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+# No `concurrency:` here: the reusable workflow owns the per-PR group.
+
+jobs:
+  preview:
+    # TODO: replace OWNER with the account that hosts the auto-preview repo.
+    # Use @main until you have tagged a release, then switch to @v1.
+    uses: fourcores/auto-preview/.github/workflows/preview.yml@main
+    with:
+      expose: "frontend:3000,api:8000"
+      ttl-minutes: 10        # short, so expiry is easy to test; raise it for real use
+    secrets:
+      PREVIEW_ENV: ${{ secrets.PREVIEW_ENV }}

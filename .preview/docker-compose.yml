@@ -1,0 +1,58 @@
+# Preview stack for the sample app. See ../../../README.md for the contract.
+#
+#   frontend (nginx, static)  --calls-->  api (node)  --tcp-->  db (postgres)
+#                                          \--http-->  extras (only with label `preview:extras`)
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+      POSTGRES_DB: app
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  api:
+    build:
+      context: ../api
+    ports:
+      - "8000:8000"                      # matches expose: api:8000
+    env_file:
+      - ${PREVIEW_ENV_FILE}              # SAMPLE_SECRET arrives from the PREVIEW_ENV secret
+    environment:
+      MESSAGE: Hello from the sample API   # edit this and push to see a rebuild
+      FRONTEND_URL: ${PREVIEW_URL_FRONTEND}
+      PREVIEW_PR_NUMBER: ${PREVIEW_PR_NUMBER}
+      PREVIEW_SHA: ${PREVIEW_SHA}
+      EXTRAS_URL: http://extras:9000
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8000/health"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  frontend:
+    build:
+      context: ../frontend
+      args:
+        API_URL: ${PREVIEW_URL_API}
+    ports:
+      - "3000:80"                        # matches expose: frontend:3000
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:80/"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  # Optional service behind a compose profile: add the `preview:extras` label.
+  extras:
+    profiles: ["extras"]
+    image: node:22-alpine
+    command: ["node", "-e", "require('http').createServer((q, r) => r.end('extras ok')).listen(9000)"]
