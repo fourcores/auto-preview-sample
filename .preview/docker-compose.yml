@@ -24,7 +24,7 @@ services:
     env_file:
       - ${PREVIEW_ENV_FILE}              # SAMPLE_SECRET arrives from the PREVIEW_ENV secret
     environment:
-      MESSAGE: Hello from the sample API   # edit this and push to see a rebuild
+      MESSAGE: Hello from the sample API !!!!!!!!!!!   # edit this and push to see a rebuild
       FRONTEND_URL: ${PREVIEW_URL_FRONTEND}
       PREVIEW_PR_NUMBER: ${PREVIEW_PR_NUMBER}
       PREVIEW_SHA: ${PREVIEW_SHA}
